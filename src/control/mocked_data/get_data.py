@@ -5,13 +5,13 @@ import numpy as np
 def get_data():
 	"""Get data from the robot arm and return the positions and joint angles."""
 	# Define the lengths of the robot arm segments
-	lengths = [20.0, 20.0, 20.0]
+	lengths = [10.0, 12.4, 6.0]
 
 	# Define the fixed height of the actuator
 	z = 10.0
 
 	# Define the number of samples to generate
-	num_samples = 100
+	num_samples = 500
 
 	# Generate random x and y coordinates within a certain range
 	x_coordinates = np.random.uniform(low=-25.0, high=25.0, size=num_samples)
