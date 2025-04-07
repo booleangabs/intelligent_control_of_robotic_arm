@@ -4,12 +4,14 @@ import numpy as np
 
 # List of all available ArUco dictionaries
 ARUCO_DICTS = [
-    aruco.DICT_4X4_50,# aruco.DICT_4X4_100, aruco.DICT_4X4_250, aruco.DICT_4X4_1000,
-    #aruco.DICT_5X5_50, aruco.DICT_5X5_100, aruco.DICT_5X5_250, aruco.DICT_5X5_1000,
-    #aruco.DICT_6X6_50, aruco.DICT_6X6_100, aruco.DICT_6X6_250, aruco.DICT_6X6_1000,
-    #aruco.DICT_7X7_50, aruco.DICT_7X7_100, aruco.DICT_7X7_250, aruco.DICT_7X7_1000,
-    #aruco.DICT_ARUCO_ORIGINAL
+    aruco.DICT_4X4_50
 ]
+
+def img2real(pixel, camera_height):
+    focal_length = 1500
+    real_x = -(camera_height * pixel[0]) / focal_length
+    real_y = (camera_height * pixel[1]) / focal_length
+    return np.float32([real_x, real_y])
 
 # Open webcam
 cap = cv2.VideoCapture(0)
@@ -29,11 +31,11 @@ while cap.isOpened():
 
         # Detect ArUco markers
         corners, ids, rejected = aruco.detectMarkers(gray, aruco_dict, parameters=parameters)
-
+        print(frame.shape)
         if ids is not None:
             detected = True
             aruco.drawDetectedMarkers(frame, corners, ids)
-            cv2.putText(frame, f"Detected Dict: {dict_id}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 
+            cv2.putText(frame, f"Detected Dict: {dict_id} | {img2real(corners[0][0][0], 45)}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 
                         0.7, (0, 255, 0), 2, cv2.LINE_AA)
             break  # Stop checking other dictionaries once detected
 

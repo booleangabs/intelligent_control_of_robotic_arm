@@ -1,4 +1,4 @@
 clc; clear all;
-arduino = serialport('COM7', 115200);
-
+arduino = serialport('COM8', 115200);
+pause(2);
 writeline(arduino, "0:10,1:10")

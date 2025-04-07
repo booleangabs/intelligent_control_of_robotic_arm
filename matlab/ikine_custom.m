@@ -1,4 +1,4 @@
-function theta_target = ikine(x_target, l1, l2, l3)
+function theta_target = ikine_custom(x_target, l1, l2, l3)
     %sphi = x_target(3)/(x_target(3)^2 + x_target(1));
     %cphi = x_target(1)/(x_target(3)^2 + x_target(1));
 
