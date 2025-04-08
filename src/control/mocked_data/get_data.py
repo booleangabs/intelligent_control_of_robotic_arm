@@ -11,12 +11,14 @@ def get_data():
 	z = 10.0
 
 	# Define the number of samples to generate
-	num_samples = 10000
+	num_samples = 50
 
 	# Generate random x and y coordinates within a certain range
-	x_coordinates = np.random.uniform(low=-25.0, high=25.0, size=num_samples)
-	y_coordinates = np.random.uniform(low=0.0, high=25.0, size=num_samples)
-
+	# x_coordinates = np.random.uniform(low=-25.0, high=25.0, size=num_samples)
+	# y_coordinates = np.random.uniform(low=0.0, high=25.0, size=num_samples)
+	# Generate x and y coordinates with uniform spacing
+	x_coordinates = np.linspace(start=-25.0, stop=25.0, num=num_samples)
+	y_coordinates = np.linspace(start=0.0, stop=25.0, num=num_samples)
 	# Calculate the z coordinate based on the fixed height
 	z_coordinates = np.full(num_samples, z)
 
