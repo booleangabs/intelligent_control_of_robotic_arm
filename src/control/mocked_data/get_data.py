@@ -11,7 +11,7 @@ def get_data():
 	z = 10.0
 
 	# Define the number of samples to generate
-	num_samples = 500
+	num_samples = 10000
 
 	# Generate random x and y coordinates within a certain range
 	x_coordinates = np.random.uniform(low=-25.0, high=25.0, size=num_samples)
