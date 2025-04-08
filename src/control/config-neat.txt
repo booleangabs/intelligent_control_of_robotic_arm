@@ -1,0 +1,35 @@
+[NEAT]
+fitness_criterion     = max
+fitness_threshold     = 10.0
+pop_size              = 150
+reset_on_extinction   = False
+
+[DefaultGenome]
+# Estrutura
+num_inputs            = 2
+num_outputs           = 4
+num_hidden            = 0
+initial_connection    = full_direct
+
+# Ativação e mutação
+activation_default    = tanh
+activation_options    = tanh
+activation_mutate_rate= 0.0
+
+weight_mutate_rate    = 0.8
+weight_replace_rate   = 0.1
+
+enabled_default       = True
+enabled_mutate_rate   = 0.01
+
+[DefaultSpeciesSet]
+compatibility_threshold = 3.0
+
+[DefaultStagnation]
+species_fitness_func  = max
+max_stagnation        = 15
+species_elitism       = 2
+
+[DefaultReproduction]
+elitism               = 2
+survival_threshold    = 0.2

@@ -1,8 +1,4 @@
 import os
-
-
-
-
 import neat
 from utils.kinematics import *
 import numpy as np
