@@ -10,11 +10,11 @@ from utils.kinematics import fkine
 
 # Carrega os dados do seu dataset
 local_dir = os.path.dirname(__file__)
-path = os.path.join(local_dir, 'mocked_data/mocked_data.npz')
+path = os.path.join(local_dir, 'extract_simulated_data/extracted_data.npz')
 data = np.load(path)
 positions_inputs = data['positions']
 #positions_inputs = np.delete(positions_inputs, 2, axis=1)  # Remove a coluna z
-angles_outputs = data['joint_angles'][:, :4] / (2 * np.pi)  # Normaliza os ângulos para [0, 1]
+angles_outputs = data['joint_angles'][:, :4] / (180)  # Normaliza os ângulos para [0, 1]
 
 # Configurações da garra
 LINK_LENGTHS = [10.0, 12.4, 6.0]
@@ -30,7 +30,7 @@ def evaluate_genome(genome, config):
         angulos_preditos = np.array(saida_normalizada) * 2 * np.pi  # Desnormaliza
 
         pos_predita = fkine(angulos_preditos, LINK_LENGTHS)
-        erro_pos = np.linalg.norm(pos_predita - entrada)
+        erro_pos = np.linalg.norm(pos_predita[:2] - entrada)
         erros.append(erro_pos)
 
     erro_medio = np.mean(erros)
@@ -87,7 +87,7 @@ if __name__ == "__main__":
     best_score = 0
     winner = 0
     winner_net = 0
-    while(i < 1 and best_score < 0.965):
+    while(i < 5 and best_score < 0.965):
        print(f'ITERATION: {i}')
        winner, winner_net =  run_neat(config_path)
        i += 1
@@ -97,5 +97,5 @@ if __name__ == "__main__":
         pickle.dump(winner, f)
     for xi, xo in zip(positions_inputs, angles_outputs):
         output = winner_net.activate(xi)
-        print("input {!r}, expected output {!r}, got {!r}".format(xi, xo, output))
+        print("input {!r}, expected output {!r}, got {!r} pos {!r}".format(xi, xo, output, fkine(output,LINK_LENGTHS)))
     print("Winner genome:\n", winner.fitness)

@@ -1,7 +1,7 @@
 [NEAT]
 fitness_criterion     = max
-fitness_threshold     = 0.98
-pop_size              = 300
+fitness_threshold     = 0.97
+pop_size              = 500
 reset_on_extinction   = False
 
 [DefaultGenome]
@@ -10,7 +10,7 @@ compatibility_disjoint_coefficient = 1.0
 compatibility_weight_coefficient  = 0.5
 
 # Estrutura da rede
-num_inputs              = 3
+num_inputs              = 2
 num_outputs             = 4
 num_hidden              = 0
 initial_connection      = partial_direct 0.5
@@ -19,7 +19,7 @@ feed_forward            = True
 # Ativação e agregação
 activation_default      = tanh
 activation_mutate_rate  = 0.2
-activation_options      = tanh
+activation_options      = tanh 
 aggregation_default     = sum
 aggregation_options     = sum
 aggregation_mutate_rate = 0.1
