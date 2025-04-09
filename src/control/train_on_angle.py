@@ -6,21 +6,14 @@ from sklearn.metrics import mean_squared_error
 import pickle
 import multiprocessing
 
-def inv(p):
-    x, y = p
-    xndc = (x + 1) / 2
-    yndc = (y + 1) / 2
-    px = xndc * 640
-    py = yndc * 480
-    return [px, py]
-
 # Carrega os dados do seu dataset
 local_dir = os.path.dirname(__file__)
-path = os.path.join(local_dir, 'extract_simulated_data/extracted_data.npz')
+path = os.path.join(local_dir, 'mocked_data/mocked_data.npz')
 data = np.load(path)
 positions_inputs = data['positions']
 #positions_inputs = np.delete(positions_inputs, 2, axis=1)  # Remove a coluna z
-angles_outputs = (data['joint_angles'][:, :4] / 180) - 0.5 # Normaliza os ângulos para [0, 1]
+angles_outputs = data['joint_angles'][:, :4] / (2 * np.pi)  # Normaliza os ângulos para [0, 1]
+
 
 # Avalia um genoma com base no erro médio
 def evaluate_genome(genome, config):
@@ -37,8 +30,12 @@ def evaluate_genome(genome, config):
     predictions = np.array(predictions)
     targets = np.array(targets)
 
-    mae = np.mean(np.abs(targets - predictions))
-    return 1.0 / (1.0 + mae)
+    diff = np.abs((predictions - targets + 0.5) % 1.0 - 0.5)  # Diferença cíclica
+    ang_error = np.mean(diff)
+    return 1.0 / (1.0 + ang_error)
+
+    # mae = np.mean(np.abs(targets - predictions))
+    # return 1.0 / (1.0 + mae)
 
     # mse = mean_squared_error(targets, predictions)
     # return 1.0 / (1.0 + mse)  # Quanto menor o erro, maior a fitness
@@ -74,12 +71,12 @@ def run_neat(config_path):
 if __name__ == "__main__":
     local_dir = os.path.dirname(__file__)
     config_path = os.path.join(local_dir, 'config-feedforward')
-    i = 1
+    winner, winner_net =  run_neat(config_path)
+    i = 0
     best_score = 0
     winner = 0
     winner_net = 0
-    winner, winner_net =  run_neat(config_path)
-    while(i < 1 and best_score < 0.96):
+    while(i < 300 and best_score < 0.965):
        print(f'ITERATION: {i}')
        winner, winner_net =  run_neat(config_path)
        i += 1
@@ -87,10 +84,7 @@ if __name__ == "__main__":
 
     with open('winner_genome.pkl', 'wb') as f:
         pickle.dump(winner, f)
-    
     for xi, xo in zip(positions_inputs, angles_outputs):
         output = winner_net.activate(xi)
-        output = (np.array(output) + 0.5) * 180
-        xo = (xo + 0.5) * 180
-        print("input {!r}, expected output {!r}, got {!r}".format(inv(xi) , xo, output))
+        print("input {!r}, expected output {!r}, got {!r}".format(xi, xo, output))
     print("Winner genome:\n", winner.fitness)
