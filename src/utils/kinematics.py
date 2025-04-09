@@ -63,5 +63,4 @@ def ikine(position: np.ndarray, lenghts: list) -> np.ndarray:
     t4 = phi - (t2 + t3)
 
     theta = np.float32([t1, t2, t3, t4, 0, 0])
-    #theta[np.isnan(theta)] = 0. # Remove NaN values
     return theta

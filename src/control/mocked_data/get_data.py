@@ -3,36 +3,34 @@ from utils.kinematics import *
 import numpy as np
 
 def get_data():
-	"""Get data from the robot arm and return the positions and joint angles."""
-	# Define the lengths of the robot arm segments
-	lengths = [10.0, 12.4, 6.0]
-
+    """Gera N posições aleatórias válidas para a garra robótica com ângulos válidos (sem NaN)."""
+    # Define the lengths of the robot arm segments
+    lengths = [10.0, 12.4, 6.0]
+    
 	# Define the fixed height of the actuator
-	z = 10.0
+    z_fixed = 10.0
+    
+	# Define sample size
+    num_samples = 50
 
-	# Define the number of samples to generate
-	num_samples = 50
+    positions = []
+    joint_angles = []
 
-	# Generate random x and y coordinates within a certain range
-	# x_coordinates = np.random.uniform(low=-25.0, high=25.0, size=num_samples)
-	# y_coordinates = np.random.uniform(low=0.0, high=25.0, size=num_samples)
-	# Generate x and y coordinates with uniform spacing
-	x_coordinates = np.linspace(start=-25.0, stop=25.0, num=num_samples)
-	y_coordinates = np.linspace(start=0.0, stop=25.0, num=num_samples)
-	# Calculate the z coordinate based on the fixed height
-	z_coordinates = np.full(num_samples, z)
+    while len(positions) < num_samples:
+        x = np.random.uniform(-25.0, 25.0)
+        y = np.random.uniform(0.0, 25.0)
+        z = z_fixed
+        position = np.array([x, y, z])
 
-	# Combine the x, y, and z coordinates into a single array
-	positions = np.column_stack((x_coordinates, y_coordinates, z_coordinates))
+        angles = ikine(position, lengths)
 
-	# Calculate the inverse kinematics for each position
-	joint_angles = []
-	for position in positions:
-		joint_angle = ikine(position, lengths)
-		joint_angles.append(joint_angle)
+        if np.any(np.isnan(angles)):
+            continue  # posição inválida, ignora
 
-	# Return the positions
-	return positions, joint_angles
+        positions.append(position)
+        joint_angles.append(angles)
+
+    return np.array(positions), np.array(joint_angles)
 
 if __name__ == "__main__":
 	positions, joint_angles = get_data()

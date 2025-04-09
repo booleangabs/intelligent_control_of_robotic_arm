@@ -1,69 +1,78 @@
-#--- parameters for the XOR-2 experiment ---#
-
 [NEAT]
 fitness_criterion     = max
-fitness_threshold     = 0.99
-pop_size              = 1000
+fitness_threshold     = 0.98
+pop_size              = 300
 reset_on_extinction   = False
 
 [DefaultGenome]
-# node activation options
-initial_connection      = partial_direct 0.5
-activation_default      = tanh
-activation_mutate_rate  = 0.5
-activation_options      = tanh
-# network parameters
-num_hidden              = 0
+
+compatibility_disjoint_coefficient = 1.0
+compatibility_weight_coefficient  = 0.5
+
+# Estrutura da rede
 num_inputs              = 3
 num_outputs             = 4
-
-# node aggregation options
+num_hidden              = 0
+initial_connection      = partial_direct 0.5
 feed_forward            = True
-compatibility_disjoint_coefficient    = 1.0
-compatibility_weight_coefficient      = 0.6
-conn_add_prob           = 0.2
-conn_delete_prob        = 0.2
-node_add_prob           = 0.2
-node_delete_prob        = 0.2
+
+# Ativação e agregação
+activation_default      = tanh
+activation_mutate_rate  = 0.2
+activation_options      = tanh
 aggregation_default     = sum
 aggregation_options     = sum
-aggregation_mutate_rate = 0.5
-bias_init_mean          = 0.0
-bias_init_stdev         = 1.0
-bias_replace_rate       = 0.5
-bias_mutate_rate        = 0.5
-bias_mutate_power       = 0.5
-bias_max_value          = 30.0
-bias_min_value          = -30.0
-response_init_mean      = 1.0
-response_init_stdev     = 0.0
-response_replace_rate   = 0.5
-response_mutate_rate    = 0.5
-response_mutate_power   = 0.5
-response_max_value      = 30.0
-response_min_value      = -30.0
+aggregation_mutate_rate = 0.1
 
-weight_max_value        = 30
-weight_min_value        = -30
+# Pesos
 weight_init_mean        = 0.0
 weight_init_stdev       = 1.0
 weight_mutate_rate      = 0.8
 weight_replace_rate     = 0.1
-weight_mutate_power     = 0.5
+weight_mutate_power     = 0.2
+weight_max_value        = 30.0
+weight_min_value        = -30.0
+
+# Bias
+bias_init_mean          = 0.0
+bias_init_stdev         = 1.0
+bias_mutate_rate        = 0.4
+bias_replace_rate       = 0.1
+bias_mutate_power       = 0.2
+bias_max_value          = 30.0
+bias_min_value          = -30.0
+
+# Response
+response_init_mean      = 1.0
+response_init_stdev     = 0.0
+response_mutate_rate    = 0.1
+response_replace_rate   = 0.1
+response_mutate_power   = 0.1
+response_max_value      = 30.0
+response_min_value      = -30.0
+
+# Conectividade
 enabled_default         = True
-enabled_mutate_rate     = 0.5
+enabled_mutate_rate     = 0.1
 
-mutate_add_node_prob = 0.5  # Maior probabilidade de adicionar um nó
-mutate_add_conn_prob = 0.5    # Maior probabilidade de adicionar uma conexão
-mutate_delete_node_prob = 0.5
-mutate_delete_conn_prob = 0.5
+# Mutação estrutural (ajustada para estabilidade)
+conn_add_prob           = 0.2
+conn_delete_prob        = 0.1
+node_add_prob           = 0.1
+node_delete_prob        = 0.05
+mutate_add_node_prob    = 0.1
+mutate_add_conn_prob    = 0.2
+mutate_delete_node_prob = 0.05
+mutate_delete_conn_prob = 0.1
 
+# Especiação
 [DefaultSpeciesSet]
 compatibility_threshold = 2.5
 
 [DefaultStagnation]
 species_fitness_func = max
-max_stagnation  = 20
+max_stagnation       = 15
+species_elitism      = 1
 
 [DefaultReproduction]
 elitism            = 2
