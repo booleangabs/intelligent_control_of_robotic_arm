@@ -30,8 +30,11 @@ def evaluate_genome(genome, config):
     predictions = np.array(predictions)
     targets = np.array(targets)
 
-    mse = mean_squared_error(targets, predictions)
-    return 1.0 / (1.0 + mse)  # Quanto menor o erro, maior a fitness
+    mae = np.mean(np.abs(targets - predictions))
+    return 1.0 / (1.0 + mae)
+
+    # mse = mean_squared_error(targets, predictions)
+    # return 1.0 / (1.0 + mse)  # Quanto menor o erro, maior a fitness
 
 # Avalia todos os genomas da população
 def eval_genomes(genomes, config):
