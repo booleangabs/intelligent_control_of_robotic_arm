@@ -38,11 +38,16 @@ def evaluate_genome(genome, config):
     predictions = np.array(predictions)
     targets = np.array(targets)
 
+    diff = np.abs((predictions - targets + 0.5) % 1.0 - 0.5)  # Diferença cíclica
+    ang_error = np.mean(diff)
+    return 1.0 / (1.0 + ang_error)
+
+
     # mae = np.mean(np.abs(targets - predictions))
     # return 1.0 / (1.0 + mae)
 
-    mse = mean_squared_error(targets, predictions)
-    return 1.0 / (1.0 + mse)  # Quanto menor o erro, maior a fitness
+    # mse = mean_squared_error(targets, predictions)
+    # return 1.0 / (1.0 + mse)  # Quanto menor o erro, maior a fitness
 
 # Avalia todos os genomas da população
 def eval_genomes(genomes, config):
