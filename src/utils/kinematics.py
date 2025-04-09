@@ -21,6 +21,11 @@ def fkine(theta: np.ndarray, lenghts: list, z: float) -> np.ndarray:
 
     x = np.cos(t1) * d
     y = np.sin(t1) * d
+
+    z = (l1 * np.sin(t2) + 
+         l2 * np.sin(t2 + t3) + 
+         l3 * np.sin(t2 + t3 + t4))
+    
     position = np.float32([x, y, z])
     return position
 
