@@ -85,11 +85,14 @@ if __name__ == "__main__":
     winner = 0
     winner_net = 0
     winner, winner_net =  run_neat(config_path)
-    while(i < 1 and best_score < 0.96):
+    while(i < 5 and best_score < 0.96):
        print(f'ITERATION: {i}')
-       winner, winner_net =  run_neat(config_path)
-       i += 1
+       current_winner, current_winner_net =  run_neat(config_path)
+       if current_winner.fitness > best_score:
+           winner = current_winner
+           winner_net = current_winner_net
        best_score = winner.fitness
+       i += 1
 
     with open('winner_genome.pkl', 'wb') as f:
         pickle.dump(winner, f)
