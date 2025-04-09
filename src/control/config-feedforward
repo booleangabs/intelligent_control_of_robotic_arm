@@ -17,9 +17,9 @@ initial_connection      = partial_direct 0.5
 feed_forward            = True
 
 # Ativação e agregação
-activation_default      = tanh
+activation_default      = sigmoid
 activation_mutate_rate  = 0.2
-activation_options      = tanh 
+activation_options      = sigmoid 
 aggregation_default     = sum
 aggregation_options     = sum
 aggregation_mutate_rate = 0.1
