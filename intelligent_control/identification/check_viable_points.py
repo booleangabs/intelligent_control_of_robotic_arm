@@ -1,6 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from intelligent_control.utils.correction import map_theta
+import seaborn as sns
+
+sns.set_style("whitegrid")
 
 def fkine(theta: np.ndarray, lenghts: list, z: float) -> np.ndarray:
     """Forward kinematics for robotic arm
@@ -69,8 +71,8 @@ def ikine(position: np.ndarray, lenghts: list) -> np.ndarray:
 lengths = list(i / 100 for i in [10, 12.4, 6])
 z = 10
 
-x_series = np.linspace(-0.3, 0.3, 25)
-y_series = np.linspace(0, 0.3, 25)
+x_series = np.linspace(-0.3, 0.3, 35)
+y_series = np.linspace(0, 0.3, 35)
 coords = np.float32([
     [x, y, z / 100] for x in x_series for y in y_series
 ])
@@ -83,19 +85,13 @@ reconstructed_points = np.float32(
     list(fkine(t, lengths, z / 100) for t in theta_array)
 )
 
+valid_mask = np.sum(np.abs(reconstructed_points - coords) < 1e-4, axis=1) == 3
+radius_constraint = np.sqrt(coords[..., 0]**2 + coords[..., 1]**2) >= 0.125
+mask = np.bitwise_and(valid_mask, radius_constraint)
 
-valid_mask = np.sum(np.abs(reconstructed_points - coords) < 1e-4, axis=1)
-valid_mask[valid_mask < 3] = 0
-valid_mask[valid_mask == 3] = 1
+print(f"N. valid points: {mask.sum()}")
 
-theta_mask = np.sum(theta_array >= np.deg2rad(0), axis=1)
-
-mask = np.bitwise_and(valid_mask, theta_mask)
-#theta_mask1[theta_mask1 < 3] = 0
-#theta_mask1[theta_mask1 > 3] = 1
-
-print(np.rad2deg(ikine(fkine(np.deg2rad([160, 120, 20, 10, 0, 0]), lengths, z), lengths)))
-plt.scatter(coords[..., 0], coords[..., 1], c=mask, label="Invalid positions")
+plt.scatter(coords[..., 0], coords[..., 1], c=mask, label="Invalid positions", s=50, marker="*", cmap="viridis")
 plt.legend()
 plt.gca().set_aspect("equal")
 plt.show()
