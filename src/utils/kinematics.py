@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def fkine(theta: np.ndarray, lenghts: list, z: float) -> np.ndarray:
+def fkine(theta: np.ndarray, lenghts: list) -> np.ndarray:
     """Forward kinematics for robotic arm
 
     Args:
