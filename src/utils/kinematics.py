@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def fkine(theta: np.ndarray, lenghts: list) -> np.ndarray:
+def fkine(theta: np.ndarray, lenghts: list, z: float) -> np.ndarray:
     """Forward kinematics for robotic arm
 
     Args:
@@ -15,21 +15,12 @@ def fkine(theta: np.ndarray, lenghts: list) -> np.ndarray:
     t1, t2, t3, t4, *_ = theta
     l1, l2, l3 = lenghts
 
-    # Ajuste dos ângulos t3 e t4 para a orientação correta
-    t3 = t3 - np.pi / 2  # Deslocando t3
-    t4 = t4 - np.pi / 2  # Deslocando t4
-
     d = (l1 * np.cos(t2) \
             + l2 * np.cos(t2 + t3)) \
             + l3 * np.cos(t2 + t3 + t4)
 
     x = np.cos(t1) * d
     y = np.sin(t1) * d
-
-    z = (l1 * np.sin(t2) + 
-         l2 * np.sin(t2 + t3) + 
-         l3 * np.sin(t2 + t3 + t4))
-    
     position = np.float32([x, y, z])
     return position
 
