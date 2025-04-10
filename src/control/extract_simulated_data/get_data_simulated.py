@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 
 # Path to the CSV file
-csv_file = 'control/extract_simulated_data/simulated_data.csv'
+csv_file = 'control/extract_simulated_data/robot_arm_cam640x480.csv'
 
 # Columns to select
 selected_columns_angles = ['motor_0', 'motor_1', 'motor_2','motor_3']
@@ -19,4 +19,5 @@ joint_angles = data[selected_columns_angles]
 positions = positions.to_numpy()
 joint_angles = joint_angles.to_numpy()
 
+print('terminou')
 np.savez("control/extract_simulated_data/extracted_data.npz", positions=positions, joint_angles=joint_angles)

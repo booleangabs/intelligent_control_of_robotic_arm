@@ -5,6 +5,7 @@ import numpy as np
 from sklearn.metrics import mean_squared_error
 import pickle
 import multiprocessing
+from utils.kinematics import fkine
 
 def inv(p):
     x, y = p
@@ -38,16 +39,16 @@ def evaluate_genome(genome, config):
     predictions = np.array(predictions)
     targets = np.array(targets)
 
-    diff = np.abs((predictions - targets + 0.5) % 1.0 - 0.5)  # Diferença cíclica
-    ang_error = np.mean(diff)
-    return 1.0 / (1.0 + ang_error)
+    # diff = np.abs((predictions - targets + 0.5) % 1.0 - 0.5)  # Diferença cíclica
+    # ang_error = np.mean(diff)
+    # return 1.0 / (1.0 + ang_error)
 
 
     # mae = np.mean(np.abs(targets - predictions))
     # return 1.0 / (1.0 + mae)
 
-    # mse = mean_squared_error(targets, predictions)
-    # return 1.0 / (1.0 + mse)  # Quanto menor o erro, maior a fitness
+    mse = mean_squared_error(targets, predictions)
+    return 1.0 / (1.0 + mse)  # Quanto menor o erro, maior a fitness
 
 # Avalia todos os genomas da população
 def eval_genomes(genomes, config):
@@ -104,4 +105,5 @@ if __name__ == "__main__":
         output = np.array(output) * 180
         xo = xo * 180
         print("input {!r}, expected output {!r}, got {!r}".format(inv(xi) , xo, output))
+        #print("input {!r}, got {!r}".format(xi) , fkine(output, [10.0, 12.4, 6.0])))
     print("Winner genome:\n", winner.fitness)
