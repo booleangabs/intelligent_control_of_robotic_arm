@@ -21,10 +21,6 @@ def extract_motors(row):
 motor_df = df_filtered['motor_control'].apply(extract_motors)
 df_filtered = pd.concat([df_filtered, motor_df], axis=1)
 
-lengths = list(i / 100 for i in [10, 12.4, 6, 3])
-for i, l in enumerate(lengths):
-    df_filtered[f'link_{i}'] = l
-
 df_filtered.info()
 
 print(df_filtered.iloc[np.random.randint(0, 30, 5)])
