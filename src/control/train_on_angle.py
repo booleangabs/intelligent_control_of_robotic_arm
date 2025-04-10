@@ -22,7 +22,8 @@ data = np.load(path)
 positions_inputs = data['positions']
 #positions_inputs = np.delete(positions_inputs, 2, axis=1)  # Remove a coluna z
 # angles_outputs = (data['joint_angles'][:, :4] / 180) - 0.5 # Normaliza os ângulos para [0, 1]
-angles_outputs = data['joint_angles'][:, :4] / 180
+# angles_outputs = data['joint_angles'][:, :4] / 180
+angles_outputs = data['joint_angles'][:, :4]  # Normaliza os ângulos para [-1, 1]
 
 # Avalia um genoma com base no erro médio
 def evaluate_genome(genome, config):
@@ -32,6 +33,8 @@ def evaluate_genome(genome, config):
     targets = []
 
     for input_vec, target_vec in zip(positions_inputs, angles_outputs):
+        target_vec = (target_vec + np.pi/2) / (np.pi)  # Normaliza a as predictions para [0, 1]
+        # target_vec = target_vec / np.pi/2 # Normaliza a as predictions para [-1, 1]
         output = net.activate(input_vec)  
         predictions.append(output)
         targets.append(target_vec)
@@ -86,7 +89,7 @@ if __name__ == "__main__":
     winner = 0
     winner_net = 0
     winner, winner_net =  run_neat(config_path)
-    while(i < 5 and best_score < 0.96):
+    while(i < 5 and best_score < 0.98):
        print(f'ITERATION: {i}')
        current_winner, current_winner_net =  run_neat(config_path)
        if current_winner.fitness > best_score:
@@ -100,10 +103,21 @@ if __name__ == "__main__":
     
     for xi, xo in zip(positions_inputs, angles_outputs):
         output = winner_net.activate(xi)
+
         # output = (np.array(output) + 0.5) * 180
         # xo = (xo + 0.5) * 180
-        output = np.array(output) * 180
-        xo = xo * 180
+
+        # output = np.array(output) * 180 
+        # xo = xo * 180
+
+        # Para converter para graus output de [-1, 1] para [0, 180]
+        # output = (np.array(output) + 1) * 90
+        # xo = (xo + np.pi/2) * (180/np.pi)
+
+        # Para converter para graus output de [0, 1] para [0, 180]
+        output = np.array(output) * 180 
+        xo = (xo + np.pi/2) * (180/np.pi)
+
         print("input {!r}, expected output {!r}, got {!r}".format(inv(xi) , xo, output))
         #print("input {!r}, got {!r}".format(xi) , fkine(output, [10.0, 12.4, 6.0])))
     print("Winner genome:\n", winner.fitness)
