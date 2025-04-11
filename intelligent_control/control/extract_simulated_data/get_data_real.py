@@ -20,12 +20,15 @@ joint_angles = data[selected_columns_angles]
 
 
 # Convert to numpy arrays
-positions = positions.to_numpy()
-joint_angles = joint_angles.to_numpy()
+positions = positions.to_numpy()[:360]
+joint_angles = joint_angles.to_numpy()[:360]
 
 # Split the data into train and test sets
 positions_target, positions_motor, joint_angles_target, joint_angles_motor = train_test_split(positions, joint_angles, test_size=0.5, random_state=42)
-
+print('positions_target', positions_target.shape)
+print('positions_motor', positions_motor.shape)
+print('joint_angles_target', joint_angles_target.shape)
+print('joint_angles_motor', joint_angles_motor.shape)
 print('terminou')
 # Save the split data
 np.savez("extract_simulated_data/extracted_data.npz", 
