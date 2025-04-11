@@ -6,8 +6,6 @@ import numpy as np
 import cv2
 import cv2.aruco as aruco
 
-df = pd.read_csv("robot_arm_cam640x480.csv")
-
 def fkine(theta: np.ndarray, lenghts: list, z: float) -> np.ndarray:
     """Forward kinematics for robotic arm
 
@@ -87,13 +85,13 @@ def pixel_to_screen(x_img, y_img, h, w):
 
 arduino = serial.Serial(port="COM8", baudrate=115200, timeout=1)
 
-lengths = list(i / 100 for i in [10, 12.4, 6])
-z = 10
+lengths = list(i / 100 for i in [10, 12.4, 3.5])
+z = 8
 
-theta_series = np.deg2rad(np.linspace(10, 170, 2) - 90)
+theta_series = np.deg2rad(np.linspace(10, 170, 4) - 90)
 theta_array = np.float32([
     [t1, t2, t3, t4, 0, 0]
-    for t1 in np.deg2rad(np.linspace(15, 165, 5) - 90)
+    for t1 in np.deg2rad(np.linspace(15, 165, 13) - 90)
     for t2 in theta_series
     for t3 in theta_series
     for t4 in theta_series
@@ -108,12 +106,17 @@ mask = reconstructed_points[..., 0] >= 0
 theta_array = theta_array[mask]
 reconstructed_points = reconstructed_points[mask]
 
-radius_constraint1 = np.sqrt(reconstructed_points[..., 0]**2 + reconstructed_points[..., 1]**2) >= 0.125
-radius_constraint2 = np.sqrt(reconstructed_points[..., 0]**2 + reconstructed_points[..., 1]**2) <= 0.2725
+radius_constraint1 = np.sqrt(reconstructed_points[..., 0]**2 + reconstructed_points[..., 1]**2) >= 0.1
+radius_constraint2 = np.sqrt(reconstructed_points[..., 0]**2 + reconstructed_points[..., 1]**2) <= 0.2
 mask = np.bitwise_and(radius_constraint1, radius_constraint2)
 
 theta_array = theta_array[mask]
 reconstructed_points = reconstructed_points[mask]
+print(len(reconstructed_points))
+
+plt.scatter(reconstructed_points[..., 0], reconstructed_points[..., 1])
+plt.gca().set_aspect("equal")
+plt.show()
 
 data = {
     "raw_motor_0": [],
@@ -134,14 +137,24 @@ data = {
 }
 
 cap = cv2.VideoCapture(0)
+raw_angles = ikine(reconstructed_points[0], lengths)
+angles = np.ceil(map_theta(raw_angles, np.deg2rad(np.float32([0, 90, 0, 0, 0, 0]))))
+formatted = ",".join(f"{i}:{v}" for i, v in enumerate(angles))
+byte_string = formatted.encode()
+arduino.write(byte_string)
+time.sleep(2)
+
+df = None
+print(len(reconstructed_points))
 
 for pos in reconstructed_points:
+    print(f"\nTesting position {pos}")
     raw_angles = ikine(pos, lengths)
     angles = np.ceil(map_theta(raw_angles, np.deg2rad(np.float32([0, 90, 0, 0, 0, 0]))))
     formatted = ",".join(f"{i}:{v}" for i, v in enumerate(angles))
     byte_string = formatted.encode()
     arduino.write(byte_string)
-    time.sleep(1)
+    time.sleep(4)
 
     ret, frame = cap.read()
     if ret:
@@ -156,29 +169,29 @@ for pos in reconstructed_points:
         # Detect ArUco markers
         corners, ids, rejected = aruco.detectMarkers(gray, aruco_dict, parameters=parameters)
         if ids is not None:
+            print("Detected")
             detected = True
             for i, marker_id in enumerate(ids.flatten()):
-                if marker_id == 1:
+                if marker_id == 0:
                     marker_corners = corners[i][0]
                     cX = np.mean(marker_corners[:, 0])
                     cY = np.mean(marker_corners[:, 1])
                     centroid_1 = (cX, cY)
-                    print(f"Centroid of marker ID 1: {centroid_1}")
+                    print(f"Centroid of marker ID 0: {centroid_1}")
+                    for i in range(4):
+                        data[f"raw_motor_{i}"].append(raw_angles[i])
+                        data[f"motor_{i}"].append(angles[i])
+                    data["x_expected"].append(pos[0])
+                    data["y_expected"].append(pos[1])
+                    data["z_expected"].append(pos[2])
+                    data["x_img"].append(cX)
+                    data["y_img"].append(cY)
+                    xs, ys = pixel_to_screen(cX, cY, h, w)
+                    data["x_screen"].append(xs)
+                    data["y_screen"].append(ys)
+                    df = pd.DataFrame(data)
+                    df.to_csv(f"robot_arm_cam{h}x{w}_real.csv", index=False)
                     break
-
-            for i in range(4):
-                data[f"raw_motor_{i}"].append(raw_angles[i])
-                data[f"motor_{i}"].append(angles[i])
-            data["x_expected"].append(pos[0])
-            data["y_expected"].append(pos[1])
-            data["z_expected"].append(pos[2])
-            data["x_img"].append(cX)
-            data["y_img"].append(cY)
-            xs, ys = pixel_to_screen(cX, cY, h, w)
-            data["x_screen"].append(xs)
-            data["y_screen"].append(ys)
-            df = pd.DataFrame(data)
-            df.to_csv(f"robot_arm_cam{h}x{w}_real.csv", index=False)
         else:
             print("No markers detected.")
 
