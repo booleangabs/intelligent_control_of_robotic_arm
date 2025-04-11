@@ -63,13 +63,14 @@ class BracoIdentificacao:
         print(f"R²: {r2:.4f}")
     
     def salvar_modelo(self, model_path, scaler_X_path, scaler_y_path):
-        """Salva o modelo e scalers em arquivos."""
-        # Garante que a pasta existe
+        """Salva o modelo e os scalers em arquivos com segurança."""
         os.makedirs(os.path.dirname(model_path), exist_ok=True)
-        
+
+        # Salva o modelo e os scalers com joblib
         joblib.dump(self.model, model_path)
         joblib.dump(self.scaler_X, scaler_X_path)
         joblib.dump(self.scaler_y, scaler_y_path)
+
         print(f"Modelo salvo em: {model_path}")
     
     def carregar_modelo(self, model_path, scaler_X_path, scaler_y_path):

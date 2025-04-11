@@ -5,57 +5,73 @@ import numpy as np
 from sklearn.metrics import mean_squared_error
 import pickle
 import multiprocessing
-import matplotlib.pyplot as plt
 from utils.kinematics import fkine
 from identification.identificacao import BracoIdentificacao
+
+def inv(p):
+    x, y = p
+    xndc = (x + 1) / 2
+    yndc = (y + 1) / 2
+    px = xndc * 640
+    py = yndc * 480
+    return [px, py]
 
 # Carrega os dados do seu dataset
 local_dir = os.path.dirname(__file__)
 path = os.path.join(local_dir, 'extract_simulated_data/extracted_data.npz')
 data = np.load(path)
-positions_inputs = data['positions']
+positions_target = data['positions_target']
+positions_motor = data['positions_motor']
 #positions_inputs = np.delete(positions_inputs, 2, axis=1)  # Remove a coluna z
-angles_outputs = data['joint_angles'][:, :4] / (180)  # Normaliza os ângulos para [0, 1]
-
-# Configurações da garra
+# angles_outputs = (data['joint_angles'][:, :4] / 180) - 0.5 # Normaliza os ângulos para [0, 1]
+# angles_outputs = data['joint_angles'][:, :4] / 180
+angles_target = data['joint_angles_target'][:, :4]
+angles_motor = data['joint_angles_motor'][:, :4]
 LINK_LENGTHS = [10.0, 12.4, 6.0]
-Z_ALTURA_FIXA = 10.
-IDENTIFICADOR = 0
 
-# Avalia um genoma com base no erro da posição
+identificador = BracoIdentificacao(
+    model_path='identification/modelos/modelo_cinematica_direta.pkl',
+    scaler_X_path='identification/modelos/scaler_motores.pkl',
+    scaler_y_path='identification/modelos/scaler_coordenadas.pkl'
+)
+
+# Avalia um genoma com base no erro médio
 def evaluate_genome(genome, config):
     net = neat.nn.FeedForwardNetwork.create(genome, config)
-    erros = []
 
-    for entrada, saida_esperada in zip(positions_inputs, angles_outputs):
-        saida_normalizada = net.activate(entrada)
-        angulos_preditos = np.array(saida_normalizada) * 2 * np.pi  # Desnormaliza
+    total_position_error = 0.0
+    num_samples = len(angles_motor)
+    
+    for p1, p2, current_angles, target_angles in zip(positions_motor, positions_target, angles_motor, angles_target):
+        p1 = np.array(inv(p1))
+        p2 = np.array(inv(p2))
+        pos_diff = p2 - p1  # Entrada da rede
+        input_vec = pos_diff.tolist()
 
-        pos_predita = fkine(angulos_preditos, LINK_LENGTHS)
-        erro_pos = np.linalg.norm(pos_predita[:2] - entrada)
-        erros.append(erro_pos)
+        # Rede prevê o delta do ângulo normalizado [0, 1]
+        output = net.activate(input_vec)
+        delta_angles = (np.array(output) * np.pi) - (np.pi / 2)  # Desnormaliza pra radianos
+        current_angles = ((current_angles / 180.0) * np.pi) - (np.pi / 2)
+        predicted_angles = current_angles + delta_angles
+        predicted_position = identificador.prever_coordenadas(predicted_angles)
 
-    erro_medio = np.mean(erros)
-    return  1.0 / (1.0 + erro_medio)  # Fitness inversamente proporcional ao erro
+        # Erro de posição por MSE
+        position_error = np.mean((predicted_position - p2) ** 2)
+        total_position_error += position_error
 
-# Avaliação de toda a população
+    avg_position_error = total_position_error / num_samples
+    fitness = 1.0 / (1.0 + avg_position_error)  # quanto menor o MSE, maior a fitness
+
+    return fitness
+
+
+# Avalia todos os genomas da população
 def eval_genomes(genomes, config):
     for _, genome in genomes:
-        evaluate_genome(genome, config)
+        genome.fitness = evaluate_genome(genome, config)
 
-# Gráfico de evolução da fitness
-def plot_fitness(history):
-    plt.plot(history)
-    plt.xlabel("Geração")
-    plt.ylabel("Fitness (1 / (1 + erro médio))")
-    plt.title("Evolução da Fitness")
-    plt.grid(True)
-    plt.tight_layout()
-    plt.savefig("fitness_plot.png")
-    plt.show()
-
-# Executa o NEAT
-def run_neat(config_path, num_generations=100):
+# Roda o NEAT com a config fornecida
+def run_neat(config_path):
     config = neat.Config(
         neat.DefaultGenome,
         neat.DefaultReproduction,
@@ -66,49 +82,49 @@ def run_neat(config_path, num_generations=100):
 
     population = neat.Population(config)
     population.add_reporter(neat.StdOutReporter(True))
-    stats = neat.StatisticsReporter()
-    population.add_reporter(stats)
+    population.add_reporter(neat.StatisticsReporter())
+    
     pe = neat.ParallelEvaluator(multiprocessing.cpu_count(), evaluate_genome)
 
-    winner = population.run(pe.evaluate, num_generations)
-
+    winner = population.run(pe.evaluate, 50)  # Número de gerações
     print("\nMelhor indivíduo (fitness):", winner.fitness)
-    winner_net = neat.nn.FeedForwardNetwork.create(winner, config)
-    np.savez('winner_network.npz', weights=winner_net)
 
-    # Gera gráfico
-    fitness_history = [c.fitness for c in stats.most_fit_genomes]
-    plot_fitness(fitness_history)
+    winner_net = neat.nn.FeedForwardNetwork.create(winner, config)
+    # salvar o próprio genoma (preferido, pois permite reconstruir a rede)
     return winner, winner_net
 
 if __name__ == "__main__":
-    
     local_dir = os.path.dirname(__file__)
     config_path = os.path.join(local_dir, 'config-feedforward')
-
-    IDENTIFICADOR = BracoIdentificacao(
-        model_path=local_dir + '/identification/modelos/modelo_cinematica_direta.pkl',
-        scaler_X_path=local_dir + '/identification/modelos/scaler_motores.pkl',
-        scaler_y_path=local_dir + '/identification/modelos/scaler_coordenadas.pkl'
-    )
-    # Ângulos dos motores: [motor_0, motor_1, motor_2, motor_3]
-    angulos = [0.5, -0.3, 1.2, 0.8]
-    coordenadas = IDENTIFICADOR.prever_coordenadas(angulos)
-    print(f"Posição prevista: x={coordenadas[0]:.1f}, y={coordenadas[1]:.1f}")
-    winner, winner_net =  run_neat(config_path)
-    i = 0
+    i = 1
     best_score = 0
     winner = 0
     winner_net = 0
-    while(i < 5 and best_score < 0.965):
+    winner, winner_net =  run_neat(config_path)
+    while(i < 1 and best_score < 0.98):
        print(f'ITERATION: {i}')
-       winner, winner_net =  run_neat(config_path)
-       i += 1
+       current_winner, current_winner_net =  run_neat(config_path)
+       if current_winner.fitness > best_score:
+           winner = current_winner
+           winner_net = current_winner_net
        best_score = winner.fitness
+       i += 1
 
     with open('winner_genome.pkl', 'wb') as f:
         pickle.dump(winner, f)
-    for xi, xo in zip(positions_inputs, angles_outputs):
-        output = winner_net.activate(xi)
-        print("input {!r}, expected output {!r}, got {!r} pos {!r}".format(xi, xo, output, fkine(output,LINK_LENGTHS)))
+    
+    for p1, p2, a1, a2 in zip(positions_motor, positions_target, angles_motor, angles_target):
+        pos_diff = p2 - p1  # Entrada da rede
+        input_vec = pos_diff.tolist()
+        output = winner_net.activate(input_vec)
+        delta_angles = np.array(output) * 180.0  # Desnormaliza pra graus
+
+        predicted_angles = a1 + delta_angles
+
+        # positions =  fkine(np.array([np.pi/2, 0, 0, 0]), [10.0, 12.4, 6.0], 10.0)
+	    # print("Positions:\n", positions)
+
+        
+        print("target {!r}, target in cm {!r}, target in angle {!r}, got cm: {!r} and angle: {!r} delta is: {!r}".format(p2 , fkine((a2 / 180.0) * np.pi, LINK_LENGTHS), a2, fkine((predicted_angles / 180.0) * np.pi, LINK_LENGTHS), predicted_angles,delta_angles))
+        #print("input {!r}, got {!r}".format(xi) , fkine(output, [10.0, 12.4, 6.0])))
     print("Winner genome:\n", winner.fitness)
