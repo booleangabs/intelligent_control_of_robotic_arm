@@ -24,4 +24,5 @@ net = neat.nn.FeedForwardNetwork.create(genome, config)
 angles = net.activate(pos)
 angles = [s * 180 for s in angles]
 
-print(angles)  # mostra as primeiras 5 previsões
+print(angles) 
+

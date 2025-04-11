@@ -114,6 +114,6 @@ if __name__ == "__main__":
 	    # print("Positions:\n", positions)
 
         
-        print("target {!r}, target in cm {!r}, target in angle {!r}, got cm: {!r} and angle: {!r}".format(p2 , fkine((a2 / 180.0) * np.pi, LINK_LENGTHS), a2, fkine((predicted_angles / 180.0) * np.pi, LINK_LENGTHS), predicted_angles))
+        print("target {!r}, target in cm {!r}, target in angle {!r}, got cm: {!r} and angle: {!r} delta is: {!r}".format(p2 , fkine((a2 / 180.0) * np.pi, LINK_LENGTHS), a2, fkine((predicted_angles / 180.0) * np.pi, LINK_LENGTHS), predicted_angles,delta_angles))
         #print("input {!r}, got {!r}".format(xi) , fkine(output, [10.0, 12.4, 6.0])))
     print("Winner genome:\n", winner.fitness)
