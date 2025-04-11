@@ -7,6 +7,7 @@ import pickle
 import multiprocessing
 import matplotlib.pyplot as plt
 from utils.kinematics import fkine
+from identification.identificacao import BracoIdentificacao
 
 # Carrega os dados do seu dataset
 local_dir = os.path.dirname(__file__)
@@ -18,7 +19,8 @@ angles_outputs = data['joint_angles'][:, :4] / (180)  # Normaliza os ângulos pa
 
 # Configurações da garra
 LINK_LENGTHS = [10.0, 12.4, 6.0]
-Z_ALTURA_FIXA = 10.0
+Z_ALTURA_FIXA = 10.
+IDENTIFICADOR = 0
 
 # Avalia um genoma com base no erro da posição
 def evaluate_genome(genome, config):
@@ -80,8 +82,19 @@ def run_neat(config_path, num_generations=100):
     return winner, winner_net
 
 if __name__ == "__main__":
+    
     local_dir = os.path.dirname(__file__)
     config_path = os.path.join(local_dir, 'config-feedforward')
+
+    IDENTIFICADOR = BracoIdentificacao(
+        model_path=local_dir + '/identification/modelos/modelo_cinematica_direta.pkl',
+        scaler_X_path=local_dir + '/identification/modelos/scaler_motores.pkl',
+        scaler_y_path=local_dir + '/identification/modelos/scaler_coordenadas.pkl'
+    )
+    # Ângulos dos motores: [motor_0, motor_1, motor_2, motor_3]
+    angulos = [0.5, -0.3, 1.2, 0.8]
+    coordenadas = IDENTIFICADOR.prever_coordenadas(angulos)
+    print(f"Posição prevista: x={coordenadas[0]:.1f}, y={coordenadas[1]:.1f}")
     winner, winner_net =  run_neat(config_path)
     i = 0
     best_score = 0

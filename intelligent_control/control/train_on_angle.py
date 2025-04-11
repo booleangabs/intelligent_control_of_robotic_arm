@@ -19,39 +19,40 @@ def inv(p):
 local_dir = os.path.dirname(__file__)
 path = os.path.join(local_dir, 'extract_simulated_data/extracted_data.npz')
 data = np.load(path)
-positions_inputs = data['positions']
+positions_target = data['positions_target']
+positions_motor = data['positions_motor']
 #positions_inputs = np.delete(positions_inputs, 2, axis=1)  # Remove a coluna z
 # angles_outputs = (data['joint_angles'][:, :4] / 180) - 0.5 # Normaliza os ângulos para [0, 1]
 # angles_outputs = data['joint_angles'][:, :4] / 180
-angles_outputs = data['joint_angles'][:, :4]  # Normaliza os ângulos para [-1, 1]
+angles_target = data['joint_angles_target'][:, :4]
+angles_motor = data['joint_angles_motor'][:, :4]
+LINK_LENGTHS = [10.0, 12.4, 6.0]
 
 # Avalia um genoma com base no erro médio
 def evaluate_genome(genome, config):
     net = neat.nn.FeedForwardNetwork.create(genome, config)
-    
-    predictions = []
-    targets = []
 
-    for input_vec, target_vec in zip(positions_inputs, angles_outputs):
-        target_vec = (target_vec + np.pi/2) / (np.pi)  # Normaliza a as predictions para [0, 1]
-        # target_vec = target_vec / np.pi/2 # Normaliza a as predictions para [-1, 1]
-        output = net.activate(input_vec)  
-        predictions.append(output)
-        targets.append(target_vec)
+    total_angle_error = 0.0
+    num_samples = len(angles_motor)
 
-    predictions = np.array(predictions)
-    targets = np.array(targets)
+    for p1, p2, current_angles, target_angles in zip(positions_motor, positions_target, angles_motor, angles_target):
+        pos_diff = p2 - p1  # Entrada da rede
+        input_vec = pos_diff.tolist()
 
-    # diff = np.abs((predictions - targets + 0.5) % 1.0 - 0.5)  # Diferença cíclica
-    # ang_error = np.mean(diff)
-    # return 1.0 / (1.0 + ang_error)
+        # Rede prevê o delta do ângulo normalizado [0, 1]
+        output = net.activate(input_vec)
+        delta_angles = np.array(output) * 180.0  # Desnormaliza pra graus
 
+        predicted_angles = current_angles + delta_angles
+        predicted_angles /= 180.0
+        target_angles /= 180.0
+        angle_error = np.mean(np.abs(predicted_angles - target_angles))
+        total_angle_error += angle_error
 
-    # mae = np.mean(np.abs(targets - predictions))
-    # return 1.0 / (1.0 + mae)
+    avg_angle_error = total_angle_error / num_samples
+    fitness = 1.0 / (1.0 + avg_angle_error)  # quanto menor o erro angular, maior a fitness
 
-    mse = mean_squared_error(targets, predictions)
-    return 1.0 / (1.0 + mse)  # Quanto menor o erro, maior a fitness
+    return fitness
 
 # Avalia todos os genomas da população
 def eval_genomes(genomes, config):
@@ -74,7 +75,7 @@ def run_neat(config_path):
     
     pe = neat.ParallelEvaluator(multiprocessing.cpu_count(), evaluate_genome)
 
-    winner = population.run(pe.evaluate, 100)  # Número de gerações
+    winner = population.run(pe.evaluate, 50)  # Número de gerações
     print("\nMelhor indivíduo (fitness):", winner.fitness)
 
     winner_net = neat.nn.FeedForwardNetwork.create(winner, config)
@@ -89,7 +90,7 @@ if __name__ == "__main__":
     winner = 0
     winner_net = 0
     winner, winner_net =  run_neat(config_path)
-    while(i < 5 and best_score < 0.98):
+    while(i < 1 and best_score < 0.98):
        print(f'ITERATION: {i}')
        current_winner, current_winner_net =  run_neat(config_path)
        if current_winner.fitness > best_score:
@@ -101,23 +102,18 @@ if __name__ == "__main__":
     with open('winner_genome.pkl', 'wb') as f:
         pickle.dump(winner, f)
     
-    for xi, xo in zip(positions_inputs, angles_outputs):
-        output = winner_net.activate(xi)
+    for p1, p2, a1, a2 in zip(positions_motor, positions_target, angles_motor, angles_target):
+        pos_diff = p2 - p1  # Entrada da rede
+        input_vec = pos_diff.tolist()
+        output = winner_net.activate(input_vec)
+        delta_angles = np.array(output) * 180.0  # Desnormaliza pra graus
 
-        # output = (np.array(output) + 0.5) * 180
-        # xo = (xo + 0.5) * 180
+        predicted_angles = a1 + delta_angles
 
-        # output = np.array(output) * 180 
-        # xo = xo * 180
+        # positions =  fkine(np.array([np.pi/2, 0, 0, 0]), [10.0, 12.4, 6.0], 10.0)
+	    # print("Positions:\n", positions)
 
-        # Para converter para graus output de [-1, 1] para [0, 180]
-        # output = (np.array(output) + 1) * 90
-        # xo = (xo + np.pi/2) * (180/np.pi)
-
-        # Para converter para graus output de [0, 1] para [0, 180]
-        output = np.array(output) * 180 
-        xo = (xo + np.pi/2) * (180/np.pi)
-
-        print("input {!r}, expected output {!r}, got {!r}".format(inv(xi) , xo, output))
+        
+        print("target {!r}, target in cm {!r}, target in angle {!r}, got cm: {!r} and angle: {!r}".format(p2 , fkine((a2 / 180.0) * np.pi, LINK_LENGTHS), a2, fkine((predicted_angles / 180.0) * np.pi, LINK_LENGTHS), predicted_angles))
         #print("input {!r}, got {!r}".format(xi) , fkine(output, [10.0, 12.4, 6.0])))
     print("Winner genome:\n", winner.fitness)
