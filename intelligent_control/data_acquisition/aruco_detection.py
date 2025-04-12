@@ -35,7 +35,7 @@ while cap.isOpened():
         if ids is not None:
             detected = True
             aruco.drawDetectedMarkers(frame, corners, ids)
-            cv2.putText(frame, f"Detected Dict: {dict_id} | {img2real(corners[0][0][0], 45)}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 
+            cv2.putText(frame, f"Detected Dict: {dict_id} | {corners[0][0][0]}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 
                         0.7, (0, 255, 0), 2, cv2.LINE_AA)
             break  # Stop checking other dictionaries once detected
 
