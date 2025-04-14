@@ -44,13 +44,13 @@ def evaluate_genome(genome, config):
         delta_angles = np.array(output) * 180.0  # Desnormaliza pra graus
 
         predicted_angles = current_angles + delta_angles
-        predicted_angles /= 180.0
-        target_angles /= 180.0
+        # predicted_angles /= 180.0
+        # target_angles /= 180.0
         angle_error = np.mean(np.abs(predicted_angles - target_angles))
         total_angle_error += angle_error
 
     avg_angle_error = total_angle_error / num_samples
-    fitness = 1.0 / (1.0 + avg_angle_error)  # quanto menor o erro angular, maior a fitness
+    fitness = 180.0 / (180.0 + avg_angle_error)  # quanto menor o erro angular, maior a fitness
 
     return fitness
 
@@ -90,7 +90,7 @@ if __name__ == "__main__":
     winner = 0
     winner_net = 0
     winner, winner_net =  run_neat(config_path)
-    while(i < 1 and best_score < 0.98):
+    while(i < 5 and best_score < 0.98):
        print(f'ITERATION: {i}')
        current_winner, current_winner_net =  run_neat(config_path)
        if current_winner.fitness > best_score:

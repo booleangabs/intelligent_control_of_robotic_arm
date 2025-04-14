@@ -39,7 +39,9 @@ identificador = BracoIdentificacao(
 def evaluate_genome(genome, config):
     net = neat.nn.FeedForwardNetwork.create(genome, config)
 
-    total_position_error = 0.0
+    total_position_error_x = 0.0
+    total_position_error_y = 0.0
+
     num_samples = len(angles_motor)
     
     for p1, p2, current_angles, target_angles in zip(positions_motor, positions_target, angles_motor, angles_target):
@@ -50,16 +52,35 @@ def evaluate_genome(genome, config):
 
         # Rede prevê o delta do ângulo normalizado [0, 1]
         output = net.activate(input_vec)
-        delta_angles = (np.array(output) * np.pi) - (np.pi / 2)  # Desnormaliza pra radianos
-        current_angles = ((current_angles / 180.0) * np.pi) - (np.pi / 2)
-        predicted_angles = current_angles + delta_angles
-        predicted_position = identificador.prever_coordenadas(predicted_angles)
 
+        delta_angles_graus = np.array(output) * 180  # Desnormaliza pra graus
+        
+        # delta_angles = (np.array(output) * np.pi) - (np.pi / 2)  # Desnormaliza pra radianos
+        # current_angles = ((current_angles / 180.0) * np.pi) - (np.pi / 2)
+
+        predicted_angles = current_angles + delta_angles_graus
+
+        predicted_angles_input = ((predicted_angles / 180.0) * np.pi) - (np.pi / 2) # Desnormaliza pra graus
+
+        predicted_position = identificador.prever_coordenadas(predicted_angles_input)
+        # print(predicted_position, current_angles, delta_angles_graus, predicted_angles,p2)
         # Erro de posição por MSE
-        position_error = np.mean((predicted_position - p2) ** 2)
-        total_position_error += position_error
+        position_error = np.abs(predicted_position - p2)
 
-    avg_position_error = total_position_error / num_samples
+        position_error_x = position_error[0]
+        position_error_y = position_error[1]
+
+        total_position_error_x += position_error_x
+        total_position_error_y += position_error_y
+
+    avg_position_error_x = total_position_error_x / num_samples
+    avg_position_error_y = total_position_error_y / num_samples
+
+    avg_position_error_x = avg_position_error_x / 640
+    avg_position_error_y = avg_position_error_y / 480
+
+    avg_position_error = (avg_position_error_x + avg_position_error_y) / 2
+
     fitness = 1.0 / (1.0 + avg_position_error)  # quanto menor o MSE, maior a fitness
 
     return fitness
@@ -101,7 +122,7 @@ if __name__ == "__main__":
     winner = 0
     winner_net = 0
     winner, winner_net =  run_neat(config_path)
-    while(i < 1 and best_score < 0.98):
+    while(i < 5 and best_score > 0.02):
        print(f'ITERATION: {i}')
        current_winner, current_winner_net =  run_neat(config_path)
        if current_winner.fitness > best_score:
